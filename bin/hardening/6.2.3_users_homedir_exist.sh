@@ -28,8 +28,18 @@ audit() {
         USERID=$(awk -F: '{print $2}' <<<"$LINE")
         DIR=$(awk -F: '{print $3}' <<<"$LINE")
         if [ "$USERID" -ge 1000 ] && [ ! -d "$DIR" ] && [ "$USER" != "nfsnobody" ] && [ "$USER" != "nobody" ] && [ "$DIR" != "/nonexistent" ]; then
-            crit "The home directory ($DIR) of user $USER does not exist."
-            ERRORS=$((ERRORS + 1))
+	    EXCEP_FOUND=0
+	    for excep in $EXCEPTIONS; do
+		if [ "$USER" = "$excep" ]; then
+		    ok "The home directory ($DIR) of user $USER is part of exceptions."
+		    EXCEP_FOUND=1
+		    break
+		fi
+	    done
+	    if [ "$EXCEP_FOUND" -eq 0 ]; then
+                crit "The home directory ($DIR) of user $USER does not exist."
+                ERRORS=$((ERRORS + 1))
+	    fi
         fi
     done
 
